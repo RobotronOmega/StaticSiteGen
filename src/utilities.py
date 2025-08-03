@@ -5,7 +5,7 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
     for node in old_nodes:
         if node.text_type == TextType.TEXT:
-            print(f"{node.text} {node.text.count(delimiter)}")
+            #print(f"{node.text} '{delimiter}': {node.text.count(delimiter)}")
             # check if delimiters are in matched pairs (% 2 != 0)
             if (node.text.count(delimiter) % 2) != 0:
                 raise Exception(f"Invalid Markdown syntax, unmatched '{delimiter}'(s)")
@@ -46,11 +46,11 @@ def split_nodes_image(old_nodes):
             text_to_split = node.text
             # Step 2: iterate through the image pairs
             for image_pair in images:
-                print(text_to_split)
-                print(f"![{image_pair[0]}]({image_pair[1]})")
+                #print(text_to_split)
+                #print(f"![{image_pair[0]}]({image_pair[1]})")
                 # Step 3: split the text on the image pair text block only once
                 split_text = text_to_split.split(f"![{image_pair[0]}]({image_pair[1]})", maxsplit=1)
-                print(split_text)
+                #print(split_text)
                 # Step 4: if the leading split string isn't empty, add it to the list
                 if split_text[0] != "":
                     new_nodes.append(TextNode(split_text[0], TextType.TEXT))
@@ -63,7 +63,7 @@ def split_nodes_image(old_nodes):
                 new_nodes.append(TextNode(text_to_split, TextType.TEXT))
         else:
             new_nodes.append(node)
-    print(new_nodes)
+    #print(new_nodes)
     return new_nodes
 
 def split_nodes_link(old_nodes):
@@ -87,11 +87,11 @@ def split_nodes_link(old_nodes):
             text_to_split = node.text
             # Step 2: iterate through the image pairs
             for link_pair in links:
-                print(text_to_split)
-                print(f"[{link_pair[0]}]({link_pair[1]})")
+                #print(text_to_split)
+                #print(f"[{link_pair[0]}]({link_pair[1]})")
                 # Step 3: split the text on the image pair text block only once
                 split_text = text_to_split.split(f"[{link_pair[0]}]({link_pair[1]})", maxsplit=1)
-                print(split_text)
+                #print(split_text)
                 # Step 4: if the leading split string isn't empty, add it to the list
                 if split_text[0] != "":
                     new_nodes.append(TextNode(split_text[0], TextType.TEXT))
@@ -104,7 +104,15 @@ def split_nodes_link(old_nodes):
                 new_nodes.append(TextNode(text_to_split, TextType.TEXT))
         else:
             new_nodes.append(node)
-    print(new_nodes)
+    #print(new_nodes)
     return new_nodes
 
+def text_to_textnodes(text):
+    new_nodes = [TextNode(text, TextType.TEXT)]
+    new_nodes = split_nodes_delimiter(new_nodes, "**", TextType.BOLD)
+    new_nodes = split_nodes_delimiter(new_nodes, "_", TextType.ITALIC)
+    new_nodes = split_nodes_delimiter(new_nodes, "`", TextType.CODE)
+    new_nodes = split_nodes_link(new_nodes)
+    new_nodes = split_nodes_image(new_nodes)
+    return new_nodes
             
