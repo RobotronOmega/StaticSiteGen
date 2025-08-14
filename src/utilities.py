@@ -1,5 +1,6 @@
 import re
 from textnode import TextNode, TextType
+from blocktype import BlockType, block_to_block_type
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
@@ -26,7 +27,7 @@ def extract_markdown_links(text):
     return re.findall(r"[^!]\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
 def split_nodes_image(old_nodes):
-    print("\n\n")
+    #print("\n\n")
     new_nodes = []
     for node in old_nodes:
         bracket_count = (node.text.count('[') + node.text.count(']') + node.text.count('(') + node.text.count(')'))
@@ -67,7 +68,7 @@ def split_nodes_image(old_nodes):
     return new_nodes
 
 def split_nodes_link(old_nodes):
-    print("\n\n")
+    #print("\n\n")
     new_nodes = []
     for node in old_nodes:
         bracket_count = (node.text.count('[') + node.text.count(']') + node.text.count('(') + node.text.count(')'))
@@ -116,3 +117,55 @@ def text_to_textnodes(text):
     new_nodes = split_nodes_image(new_nodes)
     return new_nodes
             
+def markdown_to_blocks(markdown):
+    split_markdown = markdown.split("\n\n")
+    blocks_to_return = []
+    for block in split_markdown:
+        #print(f"@@\n{block}")
+        #print("@@")
+        block = block.strip()
+        block = block.strip("\n")
+        blocks_to_return.append(block)
+        #print(f"@@\n{block}")
+        #print("@@")
+    return blocks_to_return
+
+def block_to_text_lines(block):
+    print(block)
+    print(block_to_block_type(block))
+    block_type = block_to_block_type(block)
+    split_blocks = block.split("\n")
+    block_list = []
+    match (block_type):
+        case BlockType.HEADING:
+            for sblock in split_blocks:
+                sblocktext = block.lstrip("#")
+                sblocktext = block.strip()
+                block_list.append(sblocktext)
+            return block_list
+        case BlockType.CODE:
+            for sblock in split_blocks:
+                if sblock != "```":
+                    block_list.append(sblock)
+            return block_list
+        case BlockType.QUOTE:
+            for sblock in split_blocks:
+                block_list.append( sblock.lstrip(">") )
+            return block_list
+        case BlockType.UNORDERED_LIST:
+            for sblock in split_blocks:
+                block_list.append( sblock.lstrip("- ") )
+            return block_list
+        case BlockType.ORDERED_LIST:
+            number = 1
+            for sblock in split_blocks:
+                block_list.append( sblock.lstrip(f"{number}. ") )
+                number += 1
+            return block_list
+        case BlockType.PARAGRAPH:
+            return split_blocks
+
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    for block in blocks:
+        block_type = block_to_block_type(block)
