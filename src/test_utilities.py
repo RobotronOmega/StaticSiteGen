@@ -1,7 +1,7 @@
 import unittest
 
 from textnode import TextNode, TextType
-from utilities import split_nodes_delimiter, split_nodes_image, split_nodes_link, extract_markdown_images, extract_markdown_links, text_to_textnodes, markdown_to_blocks, block_to_text_lines
+from utilities import split_nodes_delimiter, split_nodes_image, split_nodes_link, extract_markdown_images, extract_markdown_links, text_to_textnodes, markdown_to_blocks, block_to_text_node
 
 
 class TestUtilities(unittest.TestCase):
@@ -248,19 +248,17 @@ And so is this one"""
 ```"""
 
         self.assertEqual(
-            block_to_text_lines(block1),
+            block_to_text_node(block1),
             ["This is **bolded** paragraph"],
         )
         self.assertEqual(
-            block_to_text_lines(block2),
+            block_to_text_node(block2),
             [
-                "This is another paragraph with _italic_ text and `code` here",
-                "This is the same paragraph on a new line",
-                "And so is this one",
+                "This is another paragraph with _italic_ text and `code` here This is the same paragraph on a new line And so is this one",
             ]
         )
         self.assertEqual(
-            block_to_text_lines(block3),
+            block_to_text_node(block3),
             [
                 "Analyze a problem",
                 "Come up with a plan",
@@ -270,14 +268,14 @@ And so is this one"""
             ]
         )
         self.assertEqual(
-            block_to_text_lines(block4),
+            block_to_text_node(block4),
             [
                 "This is a list",
                 "with items",
             ]
         )
         self.assertEqual(
-            block_to_text_lines(block5),
+            block_to_text_node(block5),
             [
                 "10 PRINT 'HAHAHA'",
                 "20 GOTO 10",

@@ -1,6 +1,7 @@
 import re
-from textnode import TextNode, TextType
+from textnode import TextNode, TextType, text_node_to_html_node
 from blocktype import BlockType, block_to_block_type
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
@@ -130,7 +131,7 @@ def markdown_to_blocks(markdown):
         #print("@@")
     return blocks_to_return
 
-def block_to_text_lines(block):
+def block_to_text_node(block):
     print(block)
     print(block_to_block_type(block))
     block_type = block_to_block_type(block)
@@ -142,30 +143,56 @@ def block_to_text_lines(block):
                 sblocktext = block.lstrip("#")
                 sblocktext = block.strip()
                 block_list.append(sblocktext)
-            return block_list
         case BlockType.CODE:
-            for sblock in split_blocks:
-                if sblock != "```":
-                    block_list.append(sblock)
-            return block_list
+            block_text = block.lstrip("```\n")
+            block_text = block_text.rstrip("\n```")
+            block_list.append(block_text)
         case BlockType.QUOTE:
             for sblock in split_blocks:
                 block_list.append( sblock.lstrip(">") )
-            return block_list
         case BlockType.UNORDERED_LIST:
             for sblock in split_blocks:
                 block_list.append( sblock.lstrip("- ") )
-            return block_list
         case BlockType.ORDERED_LIST:
             number = 1
             for sblock in split_blocks:
                 block_list.append( sblock.lstrip(f"{number}. ") )
                 number += 1
-            return block_list
         case BlockType.PARAGRAPH:
-            return split_blocks
+            paragraph = ""
+            for sblock in split_blocks:
+                paragraph += sblock + " "
+            block_list.append(paragraph[:-1])
+    return block_list
 
 def markdown_to_html_node(markdown):
+    parent_div = ParentNode("div", [])
     blocks = markdown_to_blocks(markdown)
     for block in blocks:
         block_type = block_to_block_type(block)
+        match (block_type):
+            case BlockType.HEADING:
+                if block.startswith("# "):
+                    block_node = ParentNode("h1", [])
+                elif block.startswith("## "):
+                    block_node = ParentNode("h2", [])
+                elif block.startswith("### "):
+                    block_node = ParentNode("h3", [])
+                elif block.startswith("#### "):
+                    block_node = ParentNode("h4", [])
+                elif block.startswith("##### "):
+                    block_node = ParentNode("h5", [])
+                else:
+                    block_node = ParentNode("h6", [])
+                block_text = block_to_text_node(block)[0]
+                block_nodes = text_to_textnodes(block_text)
+                for node in block_nodes:
+                    block_node.children.append(text_node_to_html_node(node))
+            case BlockType.CODE:
+                block_text = block_to_text_node(block)[0]
+                code_text = TextNode(block_text, TextType.CODE)
+                code_node = ParentNode("code", [code_text])
+                block_node = ParentNode("pre", [code_node])
+                
+
+
