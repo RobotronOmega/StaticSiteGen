@@ -2,6 +2,7 @@ import re
 from textnode import TextNode, TextType, text_node_to_html_node
 from blocktype import BlockType, block_to_block_type
 from htmlnode import HTMLNode, LeafNode, ParentNode
+import os, shutil
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
@@ -72,7 +73,9 @@ def split_nodes_link(old_nodes):
     #print("\n\n")
     new_nodes = []
     for node in old_nodes:
+        print(node)
         bracket_count = (node.text.count('[') + node.text.count(']') + node.text.count('(') + node.text.count(')'))
+        print(bracket_count)
         # If the node isn't a TEXT node or it has no links, append it like it is
         if (
             node.text_type == TextType.TEXT and
@@ -126,7 +129,8 @@ def markdown_to_blocks(markdown):
         #print("@@")
         block = block.strip()
         block = block.strip("\n")
-        blocks_to_return.append(block)
+        if block != "":
+            blocks_to_return.append(block)
         #print(f"@@\n{block}")
         #print("@@")
     return blocks_to_return
@@ -145,11 +149,13 @@ def block_to_text_node(block):
                 block_list.append(sblocktext)
         case BlockType.CODE:
             block_text = block.lstrip("```\n")
-            block_text = block_text.rstrip("\n```")
+            block_text = block_text.rstrip("```")
             block_list.append(block_text)
         case BlockType.QUOTE:
+            quote = ""
             for sblock in split_blocks:
-                block_list.append( sblock.lstrip(">") )
+                 quote += sblock.lstrip(">") + " "
+            block_list.append(quote[:-1])
         case BlockType.UNORDERED_LIST:
             for sblock in split_blocks:
                 block_list.append( sblock.lstrip("- ") )
@@ -190,9 +196,69 @@ def markdown_to_html_node(markdown):
                     block_node.children.append(text_node_to_html_node(node))
             case BlockType.CODE:
                 block_text = block_to_text_node(block)[0]
-                code_text = TextNode(block_text, TextType.CODE)
-                code_node = ParentNode("code", [code_text])
+                code_node = LeafNode("code", block_text)
                 block_node = ParentNode("pre", [code_node])
-                
+            case BlockType.QUOTE:
+                block_text = block_to_text_node(block)[0]
+                block_nodes = text_to_textnodes(block_text)
+                paragraph = ParentNode("p", [])
+                for node in block_nodes:
+                    paragraph.children.append(text_node_to_html_node(node))
+                block_node = ParentNode("blockquote", [paragraph])
+            case BlockType.UNORDERED_LIST:
+                block_node = ParentNode("ul", [])
+                list_text = block_to_text_node(block)
+                for item in list_text:
+                    item_nodes = text_to_textnodes(item)
+                    item_html = ParentNode("li", [])
+                    for node in item_nodes:
+                        item_html.children.append(text_node_to_html_node(node))
+                    block_node.children.append(item_html)
+            case BlockType.ORDERED_LIST:
+                block_node = ParentNode("ol", [])
+                list_text = block_to_text_node(block)
+                for item in list_text:
+                    item_nodes = text_to_textnodes(item)
+                    item_html = ParentNode("li", [])
+                    for node in item_nodes:
+                        item_html.children.append(text_node_to_html_node(node))
+                    block_node.children.append(item_html)
+            case BlockType.PARAGRAPH:
+                block_node = ParentNode("p", [])
+                block_text = block_to_text_node(block)[0]
+                block_nodes = text_to_textnodes(block_text)
+                for node in block_nodes:
+                    block_node.children.append(text_node_to_html_node(node))
+        parent_div.children.append(block_node)
+    return parent_div
 
+def extract_title(markdown):
+    markdown_strip = markdown.lstrip()
+    title = re.findall(r"^# (.*)\n", markdown_strip)
+    if title == None:
+        raise Exception("Markdown file must contain a top-tier header")
+    return title[0]
 
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating {dest_path} from {from_path} using {template_path}")
+    # Read Markdown file to variable
+    with open(from_path, 'r') as file:
+        markdown = file.read()
+    # Read template file to variable
+    with open(template_path, 'r') as file:
+        template = file.read()
+    # Extract Title from markdown header
+    title = extract_title(markdown)
+    print(title)
+    # Convert markdown to html code
+    content = markdown_to_html_node(markdown).to_html()
+    print(content)
+    # Inject Title and Content into the template file
+    template = template.replace("{{ Title }}", title)
+    template = template.replace("{{ Content }}", content)
+    print(template)
+    # Write the templage file out to the destination
+    with open(dest_path, 'w'):
+        file.write(template)
+    
+    

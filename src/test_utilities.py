@@ -1,7 +1,7 @@
 import unittest
 
 from textnode import TextNode, TextType
-from utilities import split_nodes_delimiter, split_nodes_image, split_nodes_link, extract_markdown_images, extract_markdown_links, text_to_textnodes, markdown_to_blocks, block_to_text_node
+from utilities import split_nodes_delimiter, split_nodes_image, split_nodes_link, extract_markdown_images, extract_markdown_links, text_to_textnodes, markdown_to_blocks, block_to_text_node, markdown_to_html_node, extract_title
 
 
 class TestUtilities(unittest.TestCase):
@@ -277,10 +277,99 @@ And so is this one"""
         self.assertEqual(
             block_to_text_node(block5),
             [
-                "10 PRINT 'HAHAHA'",
-                "20 GOTO 10",
+                "10 PRINT 'HAHAHA'\n20 GOTO 10\n",
             ],
         )
+    def test_paragraphs(self):
+        md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+
+"""
+
+        node = markdown_to_html_node(md)
+        
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )
+
+    def test_varied_to_html(self):
+        md = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        node = markdown_to_html_node(md)
+        
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            '<div><p>This is <b>text</b> with an <i>italic</i> word and a <code>code block</code> and an <img src="https://i.imgur.com/fJRm4Vk.jpeg" alt="obi wan image" /> and a <a href="https://boot.dev">link</a></p></div>',
+        )
+
+    def test_lists_to_html(self):
+        md1 = """1. Analyze a problem
+2. Come up with a plan
+3. Break it into steps
+4. Create a function plan for each step
+5. Implement the solution"""
+
+        md2 = """- This is a list
+- with items"""
+        node1 = markdown_to_html_node(md1)
+        print(node1.children)
+        node2 = markdown_to_html_node(md2)
+        print(node2.children)
+        html1 = node1.to_html()
+        html2 = node2.to_html()
+        self.assertEqual(
+            html1,
+            '<div><ol><li>Analyze a problem</li><li>Come up with a plan</li><li>Break it into steps</li><li>Create a function plan for each step</li><li>Implement the solution</li></ol></div>',
+        )
+        self.assertEqual(
+            html2,
+            '<div><ul><li>This is a list</li><li>with items</li></ul></div>',
+        )
+
+    def test_extract_title(self):
+        md1 = """# This is the header you're looking for...
+
+1. Analyze a problem
+2. Come up with a plan
+3. Break it into steps
+4. Create a function plan for each step
+5. Implement the solution"""
+
+        md2 = """- This is a list
+- with items"""
+        title1 = extract_title(md1)
+        print(title1)
+        
+        self.assertEqual(
+            title1,
+            "This is the header you're looking for..."
+        )
+        with self.assertRaises(Exception):
+            title2 = extract_title(md2)
+            print(title2)
+           
+
 
 if __name__ == "__main__":
     unittest.main()

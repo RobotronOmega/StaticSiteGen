@@ -1,16 +1,41 @@
 from textnode import TextNode
 from textnode import TextType
 from htmlnode import HTMLNode
+from pathlib import Path
+from utilities import generate_page
+import os, shutil
 
 def main():
-    test_text = TextNode("Let me Google that for you", TextType.LINK, "https://google.com")
-    print(TextType.LINK.value)
-    print(test_text)
-    test_childnode = HTMLNode("b", "HTML")
-    test_HTML = HTMLNode("p", "This is a paragraph of HTML Text.", [test_childnode])
-    print(test_HTML)
-    test_HTML2 = HTMLNode("a", "A link to Google", None, { "href" : "https://google.com" })
-    print(test_HTML2)
-    print(test_HTML2.props_to_html())
+    copy_directories("static", "public")
+    generate_page("content/index.md", "template.html", "public/index.html")
+
+
+# copy_directories: copies one directory to another, deleting the former to ensure a clean copy.
+def copy_directories(source, dest):
+    realsource = os.path.realpath(source)
+    realdest = os.path.realpath(dest)
+    #print(f"source: {realsource}")
+    #print(f"destination: {realdest}")
+    if os.path.exists(realdest):
+        shutil.rmtree(realdest)
+    os.mkdir(realdest)
+    sourcelist = os.listdir(realsource)
+    #print(f"{sourcelist}")
+    for item in sourcelist:
+        realitem = os.path.join(realsource, item)
+        #print(realitem)
+        #print(f"isfile: {os.path.isfile(realitem)}  isdir: {os.path.isdir(realitem)}")
+        if os.path.isfile(realitem):
+            shutil.copy(realitem, realdest)
+            #print(f"Copied {item} to {realdest}")
+        elif os.path.isdir(realitem):
+            itemsourcedir = os.path.join(realsource, item)
+            itemdestdir = os.path.join(realdest, item)
+            os.mkdir(itemdestdir)
+            #print(f"Created directory {itemdestdir}")
+            copy_directories(itemsourcedir, itemdestdir)
+        else:
+            pass
+    
 
 main()
