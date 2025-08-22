@@ -1,30 +1,25 @@
 import re
 from textnode import TextNode, TextType, text_node_to_html_node
 from blocktype import BlockType, block_to_block_type
-from htmlnode import HTMLNode, LeafNode, ParentNode
-import os, shutil
+from htmlnode import LeafNode, ParentNode
+import os
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
-    #print(f"splitting on {delimiter} for {text_type}...")
     new_nodes = []
     for node in old_nodes:
         # Only split TEXT nodes
         if node.text_type == TextType.TEXT:
-            #print(f"{node.text} '{delimiter}': {node.text.count(delimiter)}")
             # check if delimiters are in matched pairs (% 2 != 0)
             if (node.text.count(delimiter) % 2) != 0:
                 raise Exception(f"Invalid Markdown syntax, unmatched '{delimiter}'(s)")
             split_text = node.text.split(delimiter)
-            #print(split_text)
             for i in range(len(split_text)):
-               # print(f"split_text[{i}] : {split_text[i]}")
                 if i % 2 != 0:
                     new_nodes.append(TextNode(split_text[i], text_type))
                 elif i % 2 == 0 and split_text[i] != "":
                     new_nodes.append(TextNode(split_text[i], TextType.TEXT))
         else:
             new_nodes.append(node)
-    #print(new_nodes)
     return new_nodes
 
 def extract_markdown_images(text):
@@ -34,7 +29,6 @@ def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
 def split_nodes_image(old_nodes):
-    #print("\n\n")
     new_nodes = []
     for node in old_nodes:
         # Only split TEXT nodes
@@ -49,11 +43,8 @@ def split_nodes_image(old_nodes):
                 text_to_split = node.text
                 # Step 2: iterate through the image pairs
                 for image_pair in images:
-                    #print(text_to_split)
-                    #print(f"![{image_pair[0]}]({image_pair[1]})")
                     # Step 3: split the text on the image pair text block only once
                     split_text = text_to_split.split(f"![{image_pair[0]}]({image_pair[1]})", maxsplit=1)
-                    #print(split_text)
                     # Step 4: if the leading split string isn't empty, add it to the list
                     if split_text[0] != "":
                         new_nodes.append(TextNode(split_text[0], TextType.TEXT))
@@ -66,11 +57,9 @@ def split_nodes_image(old_nodes):
                     new_nodes.append(TextNode(text_to_split, TextType.TEXT))
         else:
             new_nodes.append(node)
-    #print(new_nodes)
     return new_nodes
 
 def split_nodes_link(old_nodes):
-    #print("\n\n")
     new_nodes = []
     for node in old_nodes:
         # Only split TEXT nodes
@@ -86,8 +75,6 @@ def split_nodes_link(old_nodes):
                 text_to_split = node.text
                 # Step 2: iterate through the image pairs
                 for link_pair in links:
-                    #print(text_to_split)
-                    #print(f"[{link_pair[0]}]({link_pair[1]})")
                     # Step 3: split the text on the image pair text block only once
                     split_text = text_to_split.split(f"[{link_pair[0]}]({link_pair[1]})", maxsplit=1)
                     print(split_text)
@@ -103,7 +90,6 @@ def split_nodes_link(old_nodes):
                     new_nodes.append(TextNode(text_to_split, TextType.TEXT))
         else:
             new_nodes.append(node)
-    #print(new_nodes)
     return new_nodes
 
 def text_to_textnodes(text):
@@ -119,19 +105,13 @@ def markdown_to_blocks(markdown):
     split_markdown = markdown.split("\n\n")
     blocks_to_return = []
     for block in split_markdown:
-        #print(f"@@\n{block}")
-        #print("@@")
         block = block.strip()
         block = block.strip("\n")
         if block != "":
             blocks_to_return.append(block)
-        #print(f"@@\n{block}")
-        #print("@@")
     return blocks_to_return
 
 def block_to_text_node(block):
-    #print(block)
-    #print(block_to_block_type(block))
     block_type = block_to_block_type(block)
     split_blocks = block.split("\n")
     block_list = []
@@ -187,9 +167,7 @@ def markdown_to_html_node(markdown):
                 else:
                     block_node = ParentNode("h6", [])
                 block_text = block_to_text_node(block)[0]
-                #print(f"HEADING:\n{block_text}")
                 block_nodes = text_to_textnodes(block_text)
-                #print(block_nodes)
                 for node in block_nodes:
                     block_node.children.append(text_node_to_html_node(node))
             case BlockType.CODE:
@@ -198,20 +176,15 @@ def markdown_to_html_node(markdown):
                 block_node = ParentNode("pre", [code_node])
             case BlockType.QUOTE:
                 block_text = block_to_text_node(block)[0]
-                #print(f"QUOTE:\n{block_text}")
                 block_nodes = text_to_textnodes(block_text)
-                #print(block_nodes)
                 block_node = ParentNode("blockquote", [])
                 for node in block_nodes:
                     block_node.children.append(text_node_to_html_node(node))
             case BlockType.UNORDERED_LIST:
                 block_node = ParentNode("ul", [])
                 list_text = block_to_text_node(block)
-                #print(f"UNORDERED LIST:\n")
                 for item in list_text:
-                    #print(item)
                     item_nodes = text_to_textnodes(item)
-                    print(item_nodes)
                     item_html = ParentNode("li", [])
                     for node in item_nodes:
                         item_html.children.append(text_node_to_html_node(node))
@@ -219,11 +192,8 @@ def markdown_to_html_node(markdown):
             case BlockType.ORDERED_LIST:
                 block_node = ParentNode("ol", [])
                 list_text = block_to_text_node(block)
-                #print("ORDERED LIST:\n")
                 for item in list_text:
-                    #print(item)
                     item_nodes = text_to_textnodes(item)
-                    print(item_nodes)
                     item_html = ParentNode("li", [])
                     for node in item_nodes:
                         item_html.children.append(text_node_to_html_node(node))
@@ -231,13 +201,10 @@ def markdown_to_html_node(markdown):
             case BlockType.PARAGRAPH:
                 block_node = ParentNode("p", [])
                 block_text = block_to_text_node(block)[0]
-                #print(f"PARAGRAPH:\n{block_text}")
                 block_nodes = text_to_textnodes(block_text)
-                #print(block_nodes)
                 for node in block_nodes:
                     block_node.children.append(text_node_to_html_node(node))
         parent_div.children.append(block_node)
-    #print(parent_div)
     return parent_div
 
 def extract_title(markdown):
@@ -247,7 +214,7 @@ def extract_title(markdown):
         raise Exception("Markdown file must contain a top-tier header")
     return title[0]
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, base_path):
     print(f"Generating {dest_path} from {from_path} using {template_path}")
     # Read Markdown file to variable
     with open(from_path, 'r') as file:
@@ -257,14 +224,14 @@ def generate_page(from_path, template_path, dest_path):
         template = file.read()
     # Extract Title from markdown header
     title = extract_title(markdown)
-    #print(title)
     # Convert markdown to html code
     content = markdown_to_html_node(markdown).to_html()
-    #print(content)
     # Inject Title and Content into the template file
     template = template.replace("{{ Title }}", title)
     template = template.replace("{{ Content }}", content)
-    #print(template)
+    # Inject base path into links
+    template = template.replace('href="/', f'href="{base_path}')
+    template = template.replace('src="/', f'src="{base_path}')
     # Verify path to destination and creeate if not present
     if not os.path.exists(os.path.dirname(dest_path)):
         os.makedirs(os.path.dirname(dest_path))
@@ -272,18 +239,21 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_path, 'w') as file:
         file.write(template)
 
-def generate_pages_recursive(dir_path_content, template_path, dir_path_dest):
+def generate_pages_recursive(dir_path_content, template_path, dir_path_dest, base_path):
+    # generate real paths
     real_content = os.path.realpath(dir_path_content)
     real_dest = os.path.realpath(dir_path_dest)
+    # list items in current content directory
     content_list = os.listdir(real_content)
-    print(content_list)
+    # Iterate over the items. If a file, call generate_page.
+    # If a directory, call generate_pages_recursive with the new directory
     for item in content_list:
         real_item = os.path.join(real_content, item)
         if os.path.isfile(real_item):
             real_item_dest = f"{os.path.splitext(os.path.join(real_dest, item))[0]}.html"
-            generate_page(real_item, template_path, real_item_dest)
+            generate_page(real_item, template_path, real_item_dest, base_path)
         elif os.path.isdir(real_item):
-            generate_pages_recursive(real_item, template_path, os.path.join(real_dest, item))
+            generate_pages_recursive(real_item, template_path, os.path.join(real_dest, item), base_path)
 
     
     

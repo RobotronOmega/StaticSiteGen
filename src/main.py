@@ -3,11 +3,12 @@ from textnode import TextType
 from htmlnode import HTMLNode
 from pathlib import Path
 from utilities import generate_pages_recursive
-import os, shutil
+import os, shutil, sys
 
 def main():
-    copy_directories("static", "public")
-    generate_pages_recursive("content", "template.html", "public")
+    basepath = sys.argv[1]
+    copy_directories("static", "docs")
+    generate_pages_recursive("content", "template.html", "docs", basepath)
 
 
 # copy_directories: copies one directory to another, deleting the former to ensure a clean copy.
