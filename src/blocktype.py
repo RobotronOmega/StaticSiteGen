@@ -39,7 +39,7 @@ def block_to_block_type(block):
     # iterate over all the lines
     for i in range(len(split_lines)):
         # BlockType.QUOTE check: > and no space
-        if not split_lines[i].startswith(">") or split_lines[i].startswith("> "):
+        if not split_lines[i].startswith(">"):
             is_quote = False
         # BlockType.UNORDERED_LIST check: - and space
         if not split_lines[i].startswith("- "):

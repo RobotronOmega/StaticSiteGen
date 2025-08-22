@@ -2,12 +2,12 @@ from textnode import TextNode
 from textnode import TextType
 from htmlnode import HTMLNode
 from pathlib import Path
-from utilities import generate_page
+from utilities import generate_pages_recursive
 import os, shutil
 
 def main():
     copy_directories("static", "public")
-    generate_page("content/index.md", "template.html", "public/index.html")
+    generate_pages_recursive("content", "template.html", "public")
 
 
 # copy_directories: copies one directory to another, deleting the former to ensure a clean copy.
